@@ -2,12 +2,12 @@ import { useState } from "react";
 import { StartScreen } from "./components/StartScreen";
 import { GameScreen } from "./components/GameScreen";
 import { ResultScreen } from "./components/ResultScreen";
-import { Property, getRandomProperties } from "./data/properties";
+import { House, getRandomHouses } from "./data/houses";
 
 type Screen = "start" | "game" | "result";
 
 export interface RoundResult {
-  property: Property;
+  house: House;
   guessedPrice: number;
   diff: number;
   diffPercent: number;
@@ -16,12 +16,12 @@ export interface RoundResult {
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("start");
-  const [rounds, setRounds] = useState<Property[]>([]);
+  const [rounds, setRounds] = useState<House[]>([]);
   const [results, setResults] = useState<RoundResult[]>([]);
   const [currentRound, setCurrentRound] = useState(0);
 
   const startGame = () => {
-    const selected = getRandomProperties(10);
+    const selected = getRandomHouses(10);
     setRounds(selected);
     setResults([]);
     setCurrentRound(0);
@@ -53,7 +53,7 @@ export default function App() {
         {screen === "game" && rounds.length > 0 && (
           <GameScreen
             key={rounds[currentRound].id}
-            property={rounds[currentRound]}
+            house={rounds[currentRound]}
             roundNumber={currentRound + 1}
             totalRounds={rounds.length}
             onComplete={handleRoundComplete}
@@ -64,7 +64,7 @@ export default function App() {
         )}
       </div>
       <footer className="text-center py-2.5 text-xs text-gray-600 border-t border-gray-800/50 flex-shrink-0">
-        <span>РанДом © 2026 • Симулятор оценки недвижимости</span>
+        <span>РанДом © 2026 • Симулятор оценки домов</span>
       </footer>
     </div>
   );

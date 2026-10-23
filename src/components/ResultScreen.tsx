@@ -1,5 +1,5 @@
 import { RoundResult } from "../App";
-import { formatPriceFull, formatPrice } from "../data/properties";
+import { formatPriceFull, formatPrice } from "../data/houses";
 
 interface ResultScreenProps {
   results: RoundResult[];
@@ -26,7 +26,7 @@ export function ResultScreen({ results, onRestart }: ResultScreenProps) {
       return {
         title: "Опытный инвестор",
         emoji: "🏆",
-        description: "Близок к результату! Вы отлично разбираетесь в рынке недвижимости Москвы.",
+        description: "Близок к результату! Вы отлично разбираетесь в рынке загородной недвижимости.",
         color: "text-[#26CD94]",
         bgColor: "bg-[#26CD94]/10",
         borderColor: "border-[#26CD94]/30",
@@ -136,10 +136,10 @@ export function ResultScreen({ results, onRestart }: ResultScreenProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-medium text-white truncate">
-                  {result.property.title}
+                  {result.house.title}
                 </div>
                 <div className="text-xs text-gray-600 truncate">
-                  {formatPriceFull(result.property.price)}
+                  {formatPriceFull(result.house.price)}
                 </div>
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">

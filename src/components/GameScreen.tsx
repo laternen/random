@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { Property, propertyImages, formatPrice, formatPriceFull } from "../data/properties";
+import { House, formatPrice, formatPriceFull } from "../data/houses";
 import { RoundResult } from "../App";
 
 interface GameScreenProps {
-  property: Property;
+  house: House;
   roundNumber: number;
   totalRounds: number;
   onComplete: (result: RoundResult) => void;
@@ -11,13 +11,13 @@ interface GameScreenProps {
 
 // Логарифмическая шкала для удобной оценки
 const MIN_PRICE = 3000000; // 3 млн
-const MAX_PRICE = 200000000; // 200 млн
+const MAX_PRICE = 8000000000; // 8 млрд
 
 function sliderToPrice(value: number): number {
   const minLog = Math.log(MIN_PRICE);
   const maxLog = Math.log(MAX_PRICE);
   const logPrice = minLog + (value / 100) * (maxLog - minLog);
-  return Math.round(Math.exp(logPrice) / 10000) * 10000;
+  return Math.round(Math.exp(logPrice) / 100000) * 100000; // Округление до 100к
 }
 
 function priceToSlider(price: number): number {
@@ -26,11 +26,12 @@ function priceToSlider(price: number): number {
   return ((Math.log(price) - minLog) / (maxLog - minLog)) * 100;
 }
 
-export function GameScreen({ property, roundNumber, totalRounds, onComplete }: GameScreenProps) {
+export function GameScreen({ house, roundNumber, totalRounds, onComplete }: GameScreenProps) {
   const [sliderValue, setSliderValue] = useState(50);
   const [guessedPrice, setGuessedPrice] = useState(() => sliderToPrice(50));
   const [revealed, setRevealed] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Сброс при смене раунда + анимация бегунка
   useEffect(() => {
@@ -38,6 +39,7 @@ export function GameScreen({ property, roundNumber, totalRounds, onComplete }: G
     setSliderValue(0);
     setGuessedPrice(MIN_PRICE);
     setShowAnimation(true);
+    setImageError(false);
 
     const timer = setTimeout(() => {
       setSliderValue(50);
@@ -46,7 +48,7 @@ export function GameScreen({ property, roundNumber, totalRounds, onComplete }: G
     }, 600);
 
     return () => clearTimeout(timer);
-  }, [property.id]);
+  }, [house.id]);
 
   const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value);
@@ -60,8 +62,8 @@ export function GameScreen({ property, roundNumber, totalRounds, onComplete }: G
   };
 
   const handleNext = () => {
-    const diff = guessedPrice - property.price;
-    const diffPercent = (Math.abs(diff) / property.price) * 100;
+    const diff = guessedPrice - house.price;
+    const diffPercent = (Math.abs(diff) / house.price) * 100;
 
     // Система подсчёта баллов
     let points: number;
@@ -74,7 +76,7 @@ export function GameScreen({ property, roundNumber, totalRounds, onComplete }: G
     else points = 0;
 
     onComplete({
-      property,
+      house,
       guessedPrice,
       diff,
       diffPercent,
@@ -83,7 +85,7 @@ export function GameScreen({ property, roundNumber, totalRounds, onComplete }: G
   };
 
   const progress = (roundNumber / totalRounds) * 100;
-  const correctSliderPos = priceToSlider(property.price);
+  const correctSliderPos = priceToSlider(house.price);
 
   return (
     <div className="flex-1 flex flex-col px-4 py-3 max-w-md mx-auto w-full overflow-hidden">
@@ -101,38 +103,48 @@ export function GameScreen({ property, roundNumber, totalRounds, onComplete }: G
         </div>
       </div>
 
-      {/* Карточка объекта */}
+      {/* Карточка дома */}
       <div className="flex-1 flex flex-col min-h-0">
         {/* Фото */}
-        <div className="relative rounded-xl overflow-hidden mb-2 bg-gray-800 flex-shrink-0" style={{ aspectRatio: '16/9' }}>
-          <img
-            src={propertyImages[property.imageIndex]}
-            alt={property.title}
-            className="w-full h-full object-cover"
-          />
+        <div className="relative rounded-xl overflow-hidden mb-2 bg-gray-800 flex-shrink-0" style={{ aspectRatio: '16/10' }}>
+          {!imageError ? (
+            <img
+              src={house.imageUrl}
+              alt={house.title}
+              className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-500">
+              <div className="text-center">
+                <div className="text-4xl mb-2">🏠</div>
+                <div className="text-xs">Фото недоступно</div>
+              </div>
+            </div>
+          )}
           <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
-            <span className="text-xs font-medium text-white">{property.rooms}-комн.</span>
+            <span className="text-xs font-medium text-white">{house.type}</span>
           </div>
           <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
-            <span className="text-xs font-medium text-white">{property.area} м²</span>
+            <span className="text-xs font-medium text-white">{house.area} м²</span>
           </div>
         </div>
 
         {/* Информация */}
         <div className="mb-2 flex-shrink-0">
-          <h2 className="text-base font-bold text-white leading-tight">{property.title}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{property.address}</p>
-          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-            {property.floor}/{property.totalFloors} эт. • {property.description}
+          <h2 className="text-base font-bold text-white leading-tight">{house.title}</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{house.location}</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {house.area} м² • участок {house.landArea}
           </p>
         </div>
 
         {/* Бегунок */}
         <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 mb-2 flex-shrink-0">
-          <div className="text-xs text-gray-500 mb-1">Ваша оценка:</div>
+          <div className="text-xs text-gray-500 mb-1">Ваша оценка стоимости:</div>
           <div className={`text-xl font-bold mb-2 transition-colors duration-300 ${
             revealed
-              ? guessedPrice > property.price ? "text-red-400" : guessedPrice < property.price ? "text-yellow-400" : "text-[#26CD94]"
+              ? guessedPrice > house.price ? "text-red-400" : guessedPrice < house.price ? "text-yellow-400" : "text-[#26CD94]"
               : "text-[#26CD94]"
           }`}>
             {formatPrice(guessedPrice)}
@@ -172,7 +184,7 @@ export function GameScreen({ property, roundNumber, totalRounds, onComplete }: G
 
           <div className="flex justify-between text-xs text-gray-600">
             <span>3 млн ₽</span>
-            <span>200 млн ₽</span>
+            <span>8 млрд ₽</span>
           </div>
         </div>
 
@@ -183,19 +195,19 @@ export function GameScreen({ property, roundNumber, totalRounds, onComplete }: G
               <div>
                 <div className="text-xs text-gray-500">Правильная цена:</div>
                 <div className="text-lg font-bold text-[#26CD94]">
-                  {formatPriceFull(property.price)}
+                  {formatPriceFull(house.price)}
                 </div>
               </div>
               <div className="text-right">
-                {guessedPrice > property.price ? (
+                {guessedPrice > house.price ? (
                   <>
                     <div className="text-xs text-red-400 font-medium">↑ Переплата</div>
-                    <div className="text-sm font-bold text-red-400">{formatPrice(guessedPrice - property.price)}</div>
+                    <div className="text-sm font-bold text-red-400">{formatPrice(Math.abs(guessedPrice - house.price))}</div>
                   </>
-                ) : guessedPrice < property.price ? (
+                ) : guessedPrice < house.price ? (
                   <>
                     <div className="text-xs text-yellow-400 font-medium">↓ Недоплата</div>
-                    <div className="text-sm font-bold text-yellow-400">{formatPrice(property.price - guessedPrice)}</div>
+                    <div className="text-sm font-bold text-yellow-400">{formatPrice(house.price - guessedPrice)}</div>
                   </>
                 ) : (
                   <div className="text-sm font-bold text-[#26CD94]">✓ Точно!</div>
@@ -203,7 +215,7 @@ export function GameScreen({ property, roundNumber, totalRounds, onComplete }: G
               </div>
             </div>
             <div className="mt-1.5 text-xs text-gray-500">
-              Отклонение: {Math.round(Math.abs(guessedPrice - property.price) / property.price * 100)}%
+              Отклонение: {Math.round(Math.abs(guessedPrice - house.price) / house.price * 100)}%
             </div>
           </div>
         )}
